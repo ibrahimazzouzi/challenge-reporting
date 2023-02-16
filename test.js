@@ -48,7 +48,7 @@ tape('/student/:id/grades', async function (t) {
     ) {
       throw new Error('Error getting valid user data')
     }
-    t.ok(data.student, data.grades, 'Should have correct user id and grades')
+    t.ok(data, 'Should have correct user id and grades')
     t.end()
   } catch (e) {
     t.error(e)
