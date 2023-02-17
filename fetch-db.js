@@ -3,9 +3,6 @@ const request = require('request')
 const knex = require('./db.js')
 
 const gradesFilePath = './grades.json'
-let grades = (
-  fs.existsSync(gradesFilePath) ? require(gradesFilePath) : null
-)
 
 console.log('Fetching DB....')
 request('https://outlier-coding-test-data.onrender.com/students.db')
@@ -14,17 +11,33 @@ request('https://outlier-coding-test-data.onrender.com/students.db')
 
 function onDbFetched () {
   console.log('db was fetched succesfully.')
-  if (grades) return populateGrades()
+  let grades = readGradesFile()
+  if (grades) return populateGrades(grades)
   console.log('Fetching grades.json from source')
   request('https://outlier-coding-test-data.onrender.com/grades.json')
     .pipe(fs.createWriteStream('grades.json'))
     .on('finish', () => {
-      grades = require(gradesFilePath)
-      populateGrades()
+      grades = readGradesFile()
+      if (grades) return populateGrades(grades)
+      console.log('Could not read grades file : ', gradesFilePath)
     })
 }
 
-const populateGrades = () => {
+function readGradesFile () {
+  let grades = null
+  if (fs.existsSync(gradesFilePath)) {
+    try {
+      grades = JSON.parse(fs.readFileSync(gradesFilePath))
+      return grades
+    } catch (e) {
+      console.log('error reading from file system or grades file is not a valid JSON file')
+      knex.destroy()
+    }
+  }
+  return null
+}
+
+const populateGrades = (grades) => {
   console.log('Adding grades table...')
   createTable('grades').then(async _ => {
     console.log('grades table added.')
