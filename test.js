@@ -5,6 +5,7 @@ const port = (process.env.PORT = process.env.PORT || require('get-port-sync')())
 const endpoint = `http://localhost:${port}`
 
 const server = require('./server')
+const knex = require('./db')
 
 tape('health', async function (t) {
   const url = `${endpoint}/health`
@@ -14,6 +15,17 @@ tape('health', async function (t) {
       throw new Error('Error connecting to sqlite database; did you initialize it by running `npm run init-db`?')
     }
     t.ok(data.success, 'should have successful healthcheck')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
+tape('grades table', async function (t) {
+  try {
+    const exists = await knex.schema.hasTable('grades')
+    if (!exists) throw new Error('Grades table is not available in students db')
+    t.ok(exists, 'Should have grades table in students db')
     t.end()
   } catch (e) {
     t.error(e)
