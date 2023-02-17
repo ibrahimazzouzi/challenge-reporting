@@ -37,8 +37,8 @@ async function getStudentGradesReport (req, res, next) {
   Promise.all([
     knex('students').where({ id }).first(),
     knex('grades').where({ student_id: id })
-  ]).then(([student, grades]) => {
-    if (!student || !grades) return next({ statusCode: 404 })
+  ]).then(([student, grades = []]) => {
+    if (!student) return next({ statusCode: 404 })
     delete student.password_hash
     res.json({
       student,
