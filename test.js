@@ -33,7 +33,7 @@ tape('grades table', async function (t) {
 })
 
 tape('/student/:id', async function (t) {
-  const userId = 1
+  const userId = Math.floor(Math.random() * 100) + 1
   const url = `${endpoint}/student/${userId}`
   try {
     const { data: student, response } = await jsonist.get(url)
