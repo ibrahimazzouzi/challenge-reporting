@@ -34,20 +34,37 @@ async function getStudent (req, res, next) {
 
 async function getStudentGradesReport (req, res, next) {
   const id = +req.params.id
-  Promise.all([
-    knex('students').where({ id }).first(),
-    knex('grades').where({ student_id: id })
-  ]).then(([student, grades = []]) => {
-    if (!student) return next({ statusCode: 404 })
-    delete student.password_hash
-    res.json({
-      student,
-      grades
+  knex.select(
+    'students.*',
+    knex.raw(
+      'GROUP_CONCAT(grades.course || ":" || grades.grade ,", ") AS course_grades'
+    )
+  ).from('students')
+    .innerJoin('grades', 'students.id', '=', 'grades.student_id')
+    .where('students.id', '=', id).first()
+    .then(studentData => {
+      if (!studentData?.id) {
+        return next({ statusCode: 404 })
+      }
+      let grades = []
+      if (studentData?.course_grades?.length) {
+        studentData.course_grades = studentData.course_grades.split(',')
+        grades = studentData.course_grades.map(courseString => {
+          if (courseString.length) {
+            courseString = courseString.trim()
+            const parts = courseString.split(':')
+            return ({ course: parts[0], grade: Number(parts[1]) })
+          }
+          return null
+        })
+      }
+      delete studentData.password_hash
+      delete studentData.course_grades
+      res.json({ student: studentData, grades })
+    }).catch(err => {
+      console.log(err)
+      res.status(500).end()
     })
-  }).catch(e => {
-    console.log(e)
-    res.status(500).end()
-  })
 }
 
 async function getCourseGradesReport (req, res, next) {
