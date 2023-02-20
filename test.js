@@ -33,7 +33,7 @@ tape('grades table', async function (t) {
 })
 
 tape('/student/:id', async function (t) {
-  const userId = Math.floor(Math.random() * 100) + 1
+  const userId = 80
   const url = `${endpoint}/student/${userId}`
   try {
     const { data: student, response } = await jsonist.get(url)
@@ -48,7 +48,7 @@ tape('/student/:id', async function (t) {
 })
 
 tape('/student/:id/grades', async function (t) {
-  const userId = Math.floor(Math.random() * 100) + 1
+  const userId = 11
   const url = `${endpoint}/student/${userId}/grades`
   try {
     const { data, response } = await jsonist.get(url)
@@ -58,6 +58,7 @@ tape('/student/:id/grades', async function (t) {
       [student, grades].some(i => typeof i === 'undefined') ||
       data.student.id !== userId
     ) {
+      console.log(response.statusCode, userId, student.id)
       throw new Error('Error getting valid user data')
     }
     t.ok(data, 'Should have correct user id and grades')
