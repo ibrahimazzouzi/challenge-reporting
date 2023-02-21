@@ -1,11 +1,15 @@
 const tape = require('tape')
 const jsonist = require('jsonist')
+const knex = require('./db')
 
 const port = (process.env.PORT = process.env.PORT || require('get-port-sync')())
 const endpoint = `http://localhost:${port}`
-
 const server = require('./server')
-const knex = require('./db')
+
+const {
+  getOneStudent,
+  getOneStudentGradesReport
+} = require('./utils.js')
 
 tape('health', async function (t) {
   const url = `${endpoint}/health`
@@ -47,6 +51,20 @@ tape('API - /student/:id - student exists', async function (t) {
   }
 })
 
+tape('Unit - getOneStudent', async function (t) {
+  const studentId = 1 // this student exists
+  try {
+    const student = await getOneStudent(studentId)
+    if (!student || student.id !== studentId) {
+      throw new Error('Error getting valid student data')
+    }
+    t.ok(student.id, 'API - Should return correct student data/id')
+    t.end()
+  } catch (err) {
+    t.error(err)
+  }
+})
+
 tape('API - /student/:id - student does not exist', async function (t) {
   const studentId = 0 // this student id is not valid
   const url = `${endpoint}/student/${studentId}`
@@ -56,6 +74,20 @@ tape('API - /student/:id - student does not exist', async function (t) {
       throw new Error('Error getting valid student data')
     }
     t.ok(response.statusCode, 'API - Should return 404 not found')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
+tape('Unit - getOneStudent - student does not exist', async function (t) {
+  const studentId = 0 // this student id is not valid
+  try {
+    const student = await getOneStudent(studentId)
+    if (student !== null) {
+      throw new Error('Error getting null back')
+    }
+    t.ok({ student }, 'API - Should return null')
     t.end()
   } catch (e) {
     t.error(e)
@@ -81,7 +113,23 @@ tape('API - /student/:id/grades', async function (t) {
   }
 })
 
-// student with no grades test
+tape('Unit - getOneStudentGradesReport', async function (t) {
+  const studentId = 11 // this student has grades
+  try {
+    const { student, grades } = await getOneStudentGradesReport(studentId)
+    if (
+      [student, grades].some(i => typeof i !== 'object') ||
+      student.id !== studentId
+    ) {
+      throw new Error('Error getting valid student data')
+    }
+    t.ok({ student, grades }, 'Unit - Should return correct student id and grades')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
 tape('API - /student/:id/grades', async function (t) {
   const studentId = 9 // this student has no grades
   const url = `${endpoint}/student/${studentId}/grades`
@@ -91,6 +139,20 @@ tape('API - /student/:id/grades', async function (t) {
       throw new Error('Error getting a valid response code')
     }
     t.ok(response.statusCode, 'API - Should return 404')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
+tape('Unit - getOneStudentGradesReport', async function (t) {
+  const studentId = 9 // this student has no grades
+  try {
+    const data = await getOneStudentGradesReport(studentId)
+    if (data !== null) {
+      throw new Error('Error getting valid student data')
+    }
+    t.ok({ data }, 'Unit - Should return null')
     t.end()
   } catch (e) {
     t.error(e)
