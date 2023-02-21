@@ -25,22 +25,37 @@ tape('DB - grades table', async function (t) {
   try {
     const exists = await knex.schema.hasTable('grades')
     if (!exists) throw new Error('Grades table is not available in students db')
-    t.ok(exists, 'Should have grades table in students db')
+    t.ok(exists, 'DB - Should have grades table in students db')
     t.end()
   } catch (e) {
     t.error(e)
   }
 })
 
-tape('API - /student/:id', async function (t) {
-  const userId = 80
-  const url = `${endpoint}/student/${userId}`
+tape('API - /student/:id - student exists', async function (t) {
+  const studentId = 80 // this student exist in the db
+  const url = `${endpoint}/student/${studentId}`
   try {
     const { data: student, response } = await jsonist.get(url)
-    if (response.statusCode !== 200 || userId !== student.id) {
-      throw new Error('Error getting valid user data')
+    if (response.statusCode !== 200 || studentId !== student.id) {
+      throw new Error('Error getting valid student data')
     }
-    t.ok(student.id, 'Should return correct student data/id')
+    t.ok(student.id, 'API - Should return correct student data/id')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
+tape('API - /student/:id - student does not exist', async function (t) {
+  const studentId = 0 // this student id is not valid
+  const url = `${endpoint}/student/${studentId}`
+  try {
+    const { response } = await jsonist.get(url)
+    if (response.statusCode !== 404) {
+      throw new Error('Error getting valid student data')
+    }
+    t.ok(response.statusCode, 'API - Should return 404 not found')
     t.end()
   } catch (e) {
     t.error(e)
@@ -48,20 +63,34 @@ tape('API - /student/:id', async function (t) {
 })
 
 tape('API - /student/:id/grades', async function (t) {
-  const userId = 11
-  const url = `${endpoint}/student/${userId}/grades`
+  const studentId = 11 // this student has grades
+  const url = `${endpoint}/student/${studentId}/grades`
   try {
-    const { data, response } = await jsonist.get(url)
-    const [student, grades] = Object.keys(data)
+    const { data: { grades, student }, response } = await jsonist.get(url)
     if (
       response.statusCode !== 200 ||
-      [student, grades].some(i => typeof i === 'undefined') ||
-      data.student.id !== userId
+      [student, grades].some(i => typeof i !== 'object') ||
+      student.id !== studentId
     ) {
-      console.log(response.statusCode, userId, student.id)
-      throw new Error('Error getting valid user data')
+      throw new Error('Error getting valid student data')
     }
-    t.ok(data, 'Should have correct user id and grades')
+    t.ok({ student, grades }, 'API - Should have correct student id and grades')
+    t.end()
+  } catch (e) {
+    t.error(e)
+  }
+})
+
+// student with no grades test
+tape('API - /student/:id/grades', async function (t) {
+  const studentId = 9 // this student has no grades
+  const url = `${endpoint}/student/${studentId}/grades`
+  try {
+    const { response } = await jsonist.get(url)
+    if (response.statusCode !== 404) {
+      throw new Error('Error getting a valid response code')
+    }
+    t.ok(response.statusCode, 'API - Should return 404')
     t.end()
   } catch (e) {
     t.error(e)
@@ -81,7 +110,7 @@ tape('API - /course/all/grades', async function (t) {
     ) {
       throw new Error('Error getting valid grade stats')
     }
-    t.ok(data, 'Should have correct course grade stats')
+    t.ok(data, 'API - Should have correct course grade stats format')
     t.end()
   } catch (e) {
     t.error(e)
