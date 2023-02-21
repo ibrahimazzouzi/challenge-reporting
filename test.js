@@ -21,7 +21,7 @@ tape('health', async function (t) {
   }
 })
 
-tape('grades table', async function (t) {
+tape('DB - grades table', async function (t) {
   try {
     const exists = await knex.schema.hasTable('grades')
     if (!exists) throw new Error('Grades table is not available in students db')
@@ -32,7 +32,7 @@ tape('grades table', async function (t) {
   }
 })
 
-tape('/student/:id', async function (t) {
+tape('API - /student/:id', async function (t) {
   const userId = 80
   const url = `${endpoint}/student/${userId}`
   try {
@@ -40,14 +40,14 @@ tape('/student/:id', async function (t) {
     if (response.statusCode !== 200 || userId !== student.id) {
       throw new Error('Error getting valid user data')
     }
-    t.ok(student.id, 'Should return correct user id')
+    t.ok(student.id, 'Should return correct student data/id')
     t.end()
   } catch (e) {
     t.error(e)
   }
 })
 
-tape('/student/:id/grades', async function (t) {
+tape('API - /student/:id/grades', async function (t) {
   const userId = 11
   const url = `${endpoint}/student/${userId}/grades`
   try {
@@ -68,7 +68,7 @@ tape('/student/:id/grades', async function (t) {
   }
 })
 
-tape('/course/all/grades', async function (t) {
+tape('API - /course/all/grades', async function (t) {
   const url = `${endpoint}/course/all/grades`
   try {
     const { data, response } = await jsonist.get(url)
