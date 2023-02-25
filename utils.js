@@ -1,12 +1,12 @@
 const knex = require('./db')
 
 module.exports = {
-  getOneStudent,
-  getOneStudentGradesReport,
+  getStudentById,
+  getStudentGradesReportById,
   getAllGradesReport
 }
 
-async function getOneStudent (id) {
+async function getStudentById (id) {
   return knex('students').where({ id })
     .first()
     .then(student => {
@@ -16,11 +16,12 @@ async function getOneStudent (id) {
     })
 }
 
-async function getOneStudentGradesReport (id) {
+async function getStudentGradesReportById (id) {
   return knex.select(
     'students.*',
     knex.raw(
-      'GROUP_CONCAT(grades.course || ":" || grades.grade ,", ") AS course_grades'
+      'GROUP_CONCAT(grades.course || ":"' +
+      ' || grades.grade ,", ") AS course_grades'
     ))
     .from('students')
     .innerJoin('grades', 'students.id', '=', 'grades.student_id')
@@ -38,24 +39,22 @@ async function getAllGradesReport () {
     .then(stats => stats)
 }
 
-// helper function to parse database report
-function parseStudentGradesReport (studentData) {
-  if (!studentData?.id) {
-    return null
-  }
-  let grades = []
-  if (studentData?.course_grades?.length) {
-    studentData.course_grades = studentData.course_grades.split(',')
-    grades = studentData.course_grades.map(courseString => {
-      if (courseString.length) {
-        courseString = courseString.trim()
-        const parts = courseString.split(':')
-        return ({ course: parts[0], grade: Number(parts[1]) })
-      }
-      return null
-    })
-  }
-  delete studentData.password_hash
-  delete studentData.course_grades
-  return ({ student: studentData, grades })
+function parseStudentGradesReport ({
+  password_hash: passwordHash,
+  course_grades: courseGrades,
+  ...studentInfo
+}) {
+  if (!studentInfo?.id) return null
+  if (!courseGrades.length) return ({ student: studentInfo, grades: [] })
+  const grades = courseGrades.split(',')
+    .reduce(buildStudentGradesCallback, [])
+  return ({ student: studentInfo, grades })
+}
+
+function buildStudentGradesCallback (accumulator, courseString) {
+  if (!courseString) return accumulator
+  courseString = courseString.trim()
+  const [course, grade] = courseString.split(':')
+  accumulator.push({ course, grade: Number(grade) })
+  return accumulator
 }

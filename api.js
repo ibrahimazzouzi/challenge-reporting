@@ -1,7 +1,7 @@
 const knex = require('./db')
 const {
-  getOneStudent,
-  getOneStudentGradesReport,
+  getStudentById,
+  getStudentGradesReportById,
   getAllGradesReport
 } = require('./utils.js')
 
@@ -25,10 +25,8 @@ async function getHealth (req, res, next) {
 async function getStudent (req, res, next) {
   try {
     const id = +req.params.id
-    const student = await getOneStudent(id)
-    if (!student) {
-      return next({ statusCode: 404 })
-    }
+    const student = await getStudentById(id)
+    if (!student) return next({ statusCode: 404 })
     res.json(student)
   } catch (err) {
     console.log(err)
@@ -39,10 +37,8 @@ async function getStudent (req, res, next) {
 async function getStudentGradesReport (req, res, next) {
   try {
     const id = +req.params.id
-    const report = await getOneStudentGradesReport(id)
-    if (!report) {
-      return next({ statusCode: 404 })
-    }
+    const report = await getStudentGradesReportById(id)
+    if (!report) return next({ statusCode: 404 })
     res.json(report)
   } catch (err) {
     console.log(err)
