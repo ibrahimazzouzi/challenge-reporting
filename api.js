@@ -3,7 +3,7 @@ const {
   getStudentById,
   getStudentGradesReportById,
   getAllGradesReport
-} = require('./utils.js')
+} = require('./utils/utils.js')
 
 module.exports = {
   getHealth,
@@ -25,6 +25,7 @@ async function getHealth (req, res, next) {
 async function getStudent (req, res, next) {
   try {
     const id = +req.params.id
+    if (isNaN(id)) return next({ statusCode: 400 })
     const student = await getStudentById(id)
     if (!student) return next({ statusCode: 404 })
     res.json(student)
@@ -37,6 +38,7 @@ async function getStudent (req, res, next) {
 async function getStudentGradesReport (req, res, next) {
   try {
     const id = +req.params.id
+    if (isNaN(id)) return next({ statusCode: 400 })
     const report = await getStudentGradesReportById(id)
     if (!report) return next({ statusCode: 404 })
     res.json(report)
